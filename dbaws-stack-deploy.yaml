@@ -1,0 +1,14 @@
+template-file-path: awsapp-template.yaml
+parameters:
+  PrivateSubnet1CIDR: 10.0.3.0/24
+  PublicSubnet2CIDR: 10.0.2.0/24
+  DBPassword: '****'
+  BucketName: imagegallery-buckett
+  VpcCIDR: 10.0.0.0/16
+  ECRRepositoryName: imagegallery-apprepo
+  EnvironmentName: dev
+  PrivateSubnet2CIDR: 10.0.4.0/24
+  DBName: imagegallery
+  PublicSubnet1CIDR: 10.0.1.0/24
+  DBUsername: '****'
+tags: {}
