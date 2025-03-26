@@ -16,7 +16,6 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DatabaseConfig {
-
     private final Region REGION = Region.US_WEST_1;
 
     @Value("${aws.secretsmanager.secretArn}")
@@ -41,13 +40,15 @@ public class DatabaseConfig {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode secretJson = objectMapper.readTree(secretString);
 
+            String engine = secretJson.has("engine") ? secretJson.get("engine").asText() : "postgresql";
             String host = secretJson.get("host").asText();
             String port = secretJson.get("port").asText();
-            String dbname = secretJson.get("dbname").asText();
+            String dbname = secretJson.has("dbname") ? secretJson.get("dbname").asText() :
+                    secretJson.has("dbInstanceIdentifier") ? secretJson.get("dbInstanceIdentifier").asText() : "postgres";
             String username = secretJson.get("username").asText();
             String password = secretJson.get("password").asText();
 
-            String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", host, port, dbname);
+            String jdbcUrl = String.format("jdbc:%s://%s:%s/%s", engine, host, port, dbname);
 
             return DataSourceBuilder.create()
                     .url(jdbcUrl)
