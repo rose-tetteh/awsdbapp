@@ -3,7 +3,6 @@ package com.example.awsdbapp.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +15,6 @@ import java.util.Map;
 @Slf4j
 public class DatabaseConfig {
 
-    @Autowired
     private final SecretsManagerService secretsManagerService;
     private final ObjectMapper objectMapper;
 
