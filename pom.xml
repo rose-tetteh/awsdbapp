@@ -1,34 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.4</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>awsdbapp</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>awsdbapp</name>
 	<description>Demo Spring Boot project for containerization and AWS database integration and deployment</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+
 	<properties>
 		<java.version>21</java.version>
+		<aws.sdk.version>2.25.70</aws.sdk.version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -40,6 +30,39 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<!-- AWS SDK BOM for dependency management -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>bom</artifactId>
+			<version>${aws.sdk.version}</version>
+			<type>pom</type>
+			<scope>import</scope>
+		</dependency>
+
+		<!-- AWS SDK Dependencies -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>secretsmanager</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>auth</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>aws-core</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+
+		<!-- Other existing dependencies -->
 		<dependency>
 			<groupId>io.github.cdimascio</groupId>
 			<artifactId>dotenv-java</artifactId>
@@ -52,16 +75,6 @@
 			<type>pom</type>
 		</dependency>
 		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>s3</artifactId>
-			<version>2.20.26</version>
-		</dependency>
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>auth</artifactId>
-			<version>2.20.26</version>
-		</dependency>
-		<dependency>
 			<groupId>me.paulschwarz</groupId>
 			<artifactId>spring-dotenv</artifactId>
 			<version>4.0.0</version>
@@ -69,13 +82,9 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.18.2</version>
 		</dependency>
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>secretsmanager</artifactId>
-			<version>2.25.70</version>
-		</dependency>
+
+		<!-- Spring Boot Data JPA and PostgreSQL -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -85,6 +94,7 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -120,5 +130,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
