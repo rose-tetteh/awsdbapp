@@ -1,93 +1,40 @@
 package com.example.awsdbapp.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.DataSourceBuilder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
+import java.util.Map;
 
 @Configuration
+@RequiredArgsConstructor
 public class DatabaseConfig {
-    private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
 
-    private final Region REGION = Region.US_WEST_1;
-
-    @Value("${aws.secretsmanager.secretArn}")
-    private String secretArn;
-
-    @Value("${aws.accessKeyId:#{null}}")
-    private String accessKeyId;
-
-    @Value("${aws.secretKey:#{null}}")
-    private String secretKey;
+    private final SecretsManagerService secretsManagerService;
 
     @Bean
-    @Primary
     public DataSource dataSource() {
-        try {
-            // Build the SecretsManager client
-            SecretsManagerClient secretsClient;
+        String secretJson = secretsManagerService.getSecretValue("dev/database-credentials");
 
-            if (accessKeyId != null && secretKey != null) {
-                // If explicit credentials are provided, use them
-                logger.info("Using provided AWS credentials");
-                secretsClient = SecretsManagerClient.builder()
-                        .region(REGION)
-                        .credentialsProvider(StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(accessKeyId, secretKey)))
-                        .build();
-            } else {
-                // Otherwise fall back to default credentials provider chain
-                logger.info("Using default AWS credentials provider chain");
-                secretsClient = SecretsManagerClient.builder()
-                        .region(REGION)
-                        .build();
-            }
+        // Parse the JSON to extract individual values
+        Map<String, String> secretValues = secretsManagerService.parseSecretJson(secretJson);
 
-            logger.info("Fetching secret with ARN: {}", secretArn);
-            GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
-                    .secretId(secretArn)
-                    .build();
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("org.postgresql.Driver");
 
-            GetSecretValueResponse response = secretsClient.getSecretValue(getSecretValueRequest);
-            String secretString = response.secretString();
-            logger.info("Secret retrieved successfully");
+        // Construct the JDBC URL using the host, port, and dbname from the secret
+        String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s",
+                secretValues.get("host"),
+                secretValues.get("port"),
+                secretValues.get("dbname")
+        );
 
-            // Parse the secret JSON
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode secretJson = objectMapper.readTree(secretString);
+        dataSource.setUrl(jdbcUrl);
+        dataSource.setUsername(secretValues.get("username"));
+        dataSource.setPassword(secretValues.get("password"));
 
-            String engine = secretJson.has("engine") ? secretJson.get("engine").asText() : "postgresql";
-            String host = secretJson.get("host").asText();
-            String port = secretJson.get("port").asText();
-            String dbname = secretJson.has("dbname") ? secretJson.get("dbname").asText() :
-                    secretJson.has("dbInstanceIdentifier") ? secretJson.get("dbInstanceIdentifier").asText() : "postgres";
-            String username = secretJson.get("username").asText();
-            String password = secretJson.get("password").asText();
-
-            String jdbcUrl = String.format("jdbc:%s://%s:%s/%s", engine, host, port, dbname);
-            logger.info("JDBC URL constructed: {}", jdbcUrl);
-
-            return DataSourceBuilder.create()
-                    .url(jdbcUrl)
-                    .username(username)
-                    .password(password)
-                    .build();
-        } catch (Exception e) {
-            logger.error("Failed to get database credentials from Secrets Manager", e);
-            throw new RuntimeException("Failed to get database credentials from Secrets Manager", e);
-        }
+        return dataSource;
     }
 }
