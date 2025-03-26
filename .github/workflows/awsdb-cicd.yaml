@@ -29,6 +29,8 @@ jobs:
     - name: Build with Maven
       env:
         SECRETS_MANAGER_SECRET_ARN: ${{ secrets.SECRETS_MANAGER_SECRET_ARN }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: mvn -B package --file pom.xml
     
     - name: Configure AWS credentials
@@ -50,6 +52,9 @@ jobs:
       run: |
         docker build \
         --build-arg SECRETS_MANAGER_SECRET_ARN=$SECRETS_MANAGER_SECRET_ARN \
+         --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+        --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+        --build-arg AWS_REGION=$AWS_REGION \
         -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
