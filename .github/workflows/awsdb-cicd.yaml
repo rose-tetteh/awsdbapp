@@ -27,6 +27,8 @@ jobs:
         cache: 'maven'
     
     - name: Build with Maven
+      env:
+        SECRETS_MANAGER_SECRET_ARN: ${{ secrets.SECRETS_MANAGER_SECRET_ARN }}
       run: mvn -B package --file pom.xml
     
     - name: Configure AWS credentials
@@ -46,6 +48,8 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build \
+        --build-arg SECRETS_MANAGER_SECRET_ARN=$SECRETS_MANAGER_SECRET_ARN \
+        -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
