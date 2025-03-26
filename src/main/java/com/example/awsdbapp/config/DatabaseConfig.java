@@ -17,8 +17,7 @@ import javax.sql.DataSource;
 @Configuration
 public class DatabaseConfig {
 
-    @Value("${aws.region}")
-    private String awsRegion;
+    private final Region REGION = Region.US_WEST_1;
 
     @Value("${aws.secretsmanager.secretArn}")
     private String secretArn;
@@ -28,7 +27,7 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         try {
             SecretsManagerClient secretsClient = SecretsManagerClient.builder()
-                    .region(Region.of(awsRegion))
+                    .region(REGION)
                     .build();
 
             GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
