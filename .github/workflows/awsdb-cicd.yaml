@@ -3,8 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 env:
   AWS_REGION: us-west-1
@@ -19,30 +17,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
-    - name: Set up JDK 21
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-        cache: 'maven'
-    
-    - name: Build with Maven
-      env:
-        SECRETS_MANAGER_SECRET_ARN: ${{ secrets.SECRETS_MANAGER_SECRET_ARN }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: mvn -B package --file pom.xml
-    
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: $AWS_REGION
     
     - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      run: |
+        aws ecr-public get-login-password --region us-west-1 | docker login --username AWS --password-stdin public.ecr.aws
     
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
@@ -50,11 +34,6 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build \
-        --build-arg SECRETS_MANAGER_SECRET_ARN=$SECRETS_MANAGER_SECRET_ARN \
-         --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-        --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-        --build-arg AWS_REGION=$AWS_REGION \
-        -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
