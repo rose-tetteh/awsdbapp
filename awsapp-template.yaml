@@ -311,10 +311,7 @@ Resources:
     Properties:
       Name: !Sub '${EnvironmentName}/database-credentials'
       Description: RDS PostgreSQL credentials
-      GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username":"${DBUsername}"}'
-        GenerateStringKey: 'password'
-        ExcludeCharacters: '"@/\'
+      SecretString: !Sub '{"username":"${DBUsername}","password":"${DBPassword}","host":"${PostgreSQLDatabase.Endpoint.Address}","port":"${PostgreSQLDatabase.Endpoint.Port}","dbname":"${DBName}"}'
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
