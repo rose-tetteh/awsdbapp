@@ -39,7 +39,7 @@ public class ImageService {
     public ImageService() {
         this.s3Client = S3Config.s3Client();
         this.s3Presigner = S3Config.s3Presigner();
-        this.bucketName = "imagegallery-buckettt";
+        this.bucketName = "imagegallery-buckett";
     }
 
     public List<ImageDto> listImages() {
