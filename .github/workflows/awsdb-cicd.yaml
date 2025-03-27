@@ -43,5 +43,5 @@ jobs:
         aws deploy create-deployment \
           --application-name animalgallery-deployapp \
           --deployment-group-name animalgallery-appdeployG \
-          --s3-location imagegallery-buckett  \
+          --s3-location=imagegallery-buckett  \
           --region us-west-1
