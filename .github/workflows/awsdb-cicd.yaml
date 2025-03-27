@@ -34,3 +34,14 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Package deployment
+      run: |
+        zip -r deployment.zip appspec.yaml
+    - name: Deploy to ECS with CodeDeploy
+      run: |
+        aws deploy create-deployment \
+          --application-name animalgallery-deployapp \
+          --deployment-group-name animalgallery-appdeployG \
+          --s3-location imagegallery-buckett  \
+          --region us-west-1
