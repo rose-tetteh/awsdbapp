@@ -3,7 +3,7 @@ Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "arn:aws:ecs:us-west-1:677276083056:task-definition/dev-task:3"
+        TaskDefinition: "arn:aws:ecs:us-west-1:677276083056:task-definition/prod-task1:3"
         LoadBalancerInfo:
           ContainerName: "animalgallery-container"
           ContainerPort: 8080
