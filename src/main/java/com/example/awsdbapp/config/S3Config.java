@@ -70,6 +70,13 @@ public class S3Config {
                     .password(password)
                     .driverClassName("org.postgresql.Driver")
                     .build();
+
+//            return DataSourceBuilder.create()
+//                    .url("jdbc:postgresql://image-gallery-db.cd2426w0q9fa.eu-west-1.rds.amazonaws.com:5432/imagegallery")
+//                    .username("awsrdsdb")
+//                    .password("awsAPP,.12")
+//                    .driverClassName("org.postgresql.Driver")
+//                    .build();
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve database credentials from Secrets Manager", e);
         }

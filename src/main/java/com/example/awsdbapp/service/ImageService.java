@@ -6,7 +6,6 @@ import com.example.awsdbapp.model.ImageEntity;
 import com.example.awsdbapp.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,18 +28,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ImageService {
-    private final S3Client s3Client;
-    private final S3Presigner s3Presigner;
-    private final String bucketName;
+    private final S3Client s3Client = S3Config.s3Client();
+    private final S3Presigner s3Presigner = S3Config.s3Presigner();
+    private final String bucketName = "imagegallery-buckett";
 
-    @Autowired
     private ImageRepository imageRepository;
 
-    public ImageService() {
-        this.s3Client = S3Config.s3Client();
-        this.s3Presigner = S3Config.s3Presigner();
-        this.bucketName = "imagegallery-buckett";
-    }
+
+//    public ImageService(ImageRepository imageRepository) {
+//        this.s3Client = S3Config.s3Client();
+//        this.s3Presigner = S3Config.s3Presigner();
+//        this.imageRepository = imageRepository;
+//    }
+
 
     public List<ImageDto> listImages() {
         try {

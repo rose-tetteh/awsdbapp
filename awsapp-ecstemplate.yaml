@@ -4,7 +4,7 @@ Description: 'ECS Cluster, Service, and Task Definitions'
 Parameters:
   EnvironmentName:
     Type: String
-    Default: 'dev'
+    Default: 'prod'
     Description: Environment name, must match the VPC stack
   ContainerPort:
     Type: Number
@@ -33,8 +33,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource:
-                  Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN'
+                Resource: '*'
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -48,6 +47,15 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: '*'
 
   # Load Balancer Security Group
   LoadBalancerSG:
@@ -93,12 +101,12 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb
 
-  # Target Groups
+  # Target Groups (Fixed Port references)
   BlueTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub ${EnvironmentName}-tg-blue
-      Port: 80
+      Port: !Ref ContainerPort
       Protocol: HTTP
       TargetType: ip
       VpcId:
@@ -115,7 +123,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub ${EnvironmentName}-tg-green
-      Port: 80
+      Port: !Ref ContainerPort
       Protocol: HTTP
       TargetType: ip
       VpcId:
@@ -128,7 +136,7 @@ Resources:
       Matcher:
         HttpCode: '200-299'
 
-  # Listener
+  # Listeners
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -173,8 +181,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Sub ${EnvironmentName}-task1
-      Cpu: '256'
-      Memory: '512'
+      Cpu: 512
+      Memory: 1024
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -185,30 +193,62 @@ Resources:
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/imagegallery-apprepo:latest'
           Essential: true
           PortMappings:
-            - ContainerPort: !Ref ContainerPort
-              HostPort: !Ref ContainerPort
+            - ContainerPort:
+                Ref: ContainerPort
+              HostPort:
+                Ref: ContainerPort
               Protocol: tcp
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref CloudWatchLogGroup
-              awslogs-region: !Ref AWS::Region
+              awslogs-group:
+                Ref: CloudWatchLogGroup
+              awslogs-region:
+                Ref: AWS::Region
               awslogs-stream-prefix: ecs
           Environment:
             - Name: S3_BUCKET_NAME
               Value:
-                Fn::ImportValue: !Sub '${EnvironmentName}-S3BucketName'
+                Fn::ImportValue:
+                  !Sub '${EnvironmentName}-S3BucketName'
+            - Name: SPRING_ACTIVE_PROFILE
+              Value: prod
           Secrets:
             - Name: DB_USERNAME
-              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':username::']]
+              ValueFrom:
+                Fn::Join:
+                  - ''
+                  - - Fn::ImportValue:
+                        !Sub '${EnvironmentName}-SecretARN'
+                    - ':username::'
             - Name: DB_PASSWORD
-              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':password::']]
+              ValueFrom:
+                Fn::Join:
+                  - ''
+                  - - Fn::ImportValue:
+                        !Sub '${EnvironmentName}-SecretARN'
+                    - ':password::'
             - Name: DB_HOST
-              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':host::']]
+              ValueFrom:
+                Fn::Join:
+                  - ''
+                  - - Fn::ImportValue:
+                        !Sub '${EnvironmentName}-SecretARN'
+                    - ':host::'
             - Name: DB_PORT
-              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':port::']]
+              ValueFrom:
+                Fn::Join:
+                  - ''
+                  - - Fn::ImportValue:
+                        !Sub '${EnvironmentName}-SecretARN'
+                    - ':port::'
             - Name: DB_NAME
-              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':dbname::']]
+              ValueFrom:
+                Fn::Join:
+                  - ''
+                  - - Fn::ImportValue:
+                        !Sub '${EnvironmentName}-SecretARN'
+                    - ':dbname::'
 
   # ECS Service
   ECSService:
@@ -245,9 +285,6 @@ Resources:
         - /
         - - service
           - !Ref ECSCluster
-          - !GetAtt ECSService.NameF
+          - !GetAtt ECSService.Name
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
-
-
-
