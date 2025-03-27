@@ -45,6 +45,6 @@ jobs:
       run: |
         aws deploy create-deployment \
           --application-name animalgallery-deployapp \
-          --deployment-group-name animalgallery-appdeployG \
+          --deployment-group-name animgallerydeployappgp \
           --s3-location bucket=imagegallery-buckett,key=deployment.zip,bundleType=zip \
           --region us-west-1
