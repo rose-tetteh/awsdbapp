@@ -1,0 +1,5 @@
+template-file-path: awsapp-ecstemplate.yaml
+parameters:
+  EnvironmentName: prod
+  ContainerPort: '8080'
+tags: {}
