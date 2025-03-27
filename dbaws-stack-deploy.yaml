@@ -6,7 +6,7 @@ parameters:
   BucketName: imagegallery-buckett
   VpcCIDR: 10.0.0.0/16
   ECRRepositoryName: imagegallery-apprepo
-  EnvironmentName: dev
+  EnvironmentName: prod
   PrivateSubnet2CIDR: 10.0.4.0/24
   DBName: imagegallery
   PublicSubnet1CIDR: 10.0.1.0/24
