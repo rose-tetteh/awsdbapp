@@ -49,22 +49,31 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
-
-  ECSSecurityGroup:
+  # Load Balancer Security Group
+  LoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for ECS tasks
+      GroupDescription: Security group for the load balancer
       VpcId:
-        - Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
-      SecurityGroupEgress:
+        Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
+      SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          DestinationSecurityGroupId:
-            - Fn::ImportValue: !Sub '${EnvironmentName}-RDSSecurityGroup'
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-ecs-sg'
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # ECS Tasks Security Group
+  ECSTaskSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the ECS tasks
+      VpcId:
+        Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref LoadBalancerSG
 
   # Load Balancer
   ApplicationLoadBalancer:
@@ -79,7 +88,7 @@ Resources:
         - Fn::ImportValue: !Sub '${EnvironmentName}-PublicSubnet1'
         - Fn::ImportValue: !Sub '${EnvironmentName}-PublicSubnet2'
       SecurityGroups:
-        - Fn::ImportValue: !Sub '${EnvironmentName}-alb-sg'
+        - !Ref LoadBalancerSG
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb
@@ -220,7 +229,8 @@ Resources:
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
-          SecurityGroups: !Ref ECSSecurityGroup
+          SecurityGroups:
+            - !Ref ECSTaskSG
           Subnets:
             - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet1'
             - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet2'
@@ -235,27 +245,9 @@ Resources:
         - /
         - - service
           - !Ref ECSCluster
-          - !GetAtt ECSService.Name
+          - !GetAtt ECSService.NameF
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
 
-  Outputs:
-    LoadBalancerDNS:
-      Description: DNS of the load balancer
-      Value: !GetAtt ApplicationLoadBalancer.DNSName
-      Export:
-        Name: !Sub ${EnvironmentName}-LoadBalancerDNS
-
-    ECSClusterName:
-      Description: Name of the ECS cluster
-      Value: !Ref ECSCluster
-      Export:
-        Name: !Sub ${EnvironmentName}-ECSClusterName
-
-      ECSServiceName:
-        Description: Name of the ECS service
-        Value: !GetAtt ECSService.Name
-        Export:
-          Name: !Sub ${EnvironmentName}-ECSServiceName
 

@@ -19,6 +19,18 @@
 		<aws.sdk.version>2.25.70</aws.sdk.version>
 	</properties>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>${aws.sdk.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -31,15 +43,6 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- AWS SDK BOM for dependency management -->
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>bom</artifactId>
-			<version>${aws.sdk.version}</version>
-			<type>pom</type>
-			<scope>import</scope>
-		</dependency>
-
 		<!-- AWS SDK Dependencies -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
@@ -50,6 +53,10 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-secretsmanager</artifactId>
 			<version>1.12.613</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>ssm</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
