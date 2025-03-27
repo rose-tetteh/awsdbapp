@@ -32,7 +32,7 @@ public class ImageService {
     private final S3Presigner s3Presigner = S3Config.s3Presigner();
     private final String bucketName = "imagegallery-buckett";
 
-    private ImageRepository imageRepository;
+    private final ImageRepository imageRepository;
 
 
 //    public ImageService(ImageRepository imageRepository) {
