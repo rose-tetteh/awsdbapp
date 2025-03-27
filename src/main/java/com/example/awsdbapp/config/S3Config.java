@@ -3,7 +3,6 @@ package com.example.awsdbapp.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.jdbc.DataSourceBuilder;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -48,7 +47,7 @@ public class S3Config {
                     .build();
 
             GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
-                    .secretId("dev/database-credentials")
+                    .secretId("prod/database-credentials")
                     .build();
 
             GetSecretValueResponse getSecretValueResult = client.getSecretValue(getSecretValueRequest);
@@ -61,7 +60,7 @@ public class S3Config {
             String password = secretJson.get("password").asText();
             String dbname = secretJson.get("dbname").asText();
 
-            String rdsEndpoint = "dbaws-stack-postgresqldatabase-iuhq8njspktn.cfko0is804se.us-west-1.rds.amazonaws.com";
+            String rdsEndpoint = "awsdb-stack-postgresqldatabase-rhxqyswjswxe.cfko0is804se.us-west-1.rds.amazonaws.com";
             String rdsPort = "5432";
             String jdbcUrl = "jdbc:postgresql://" + rdsEndpoint + ":" + rdsPort + "/" + dbname;
 

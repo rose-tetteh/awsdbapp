@@ -5,7 +5,7 @@ Parameters:
   EnvironmentName:
     Description: Environment name prefix
     Type: String
-    Default: 'dev'
+    Default: 'prod'
 
   # VPC Network Parameters
   VpcCIDR:
