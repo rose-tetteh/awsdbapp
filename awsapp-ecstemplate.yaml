@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS Cluster, Service, and Task Definitions'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'dev'
+    Description: Environment name, must match the VPC stack
+  ContainerPort:
+    Type: Number
+    Default: 8080
+    Description: Port on which the container listens
+
+Resources:
+  # IAM Roles
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN'
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId:
+        - Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          DestinationSecurityGroupId:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-RDSSecurityGroup'
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-ecs-sg'
+
+  # Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-alb
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Subnets:
+        - Fn::ImportValue: !Sub '${EnvironmentName}-PublicSubnet1'
+        - Fn::ImportValue: !Sub '${EnvironmentName}-PublicSubnet2'
+      SecurityGroups:
+        - Fn::ImportValue: !Sub '${EnvironmentName}-alb-sg'
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-alb
+
+  # Target Groups
+  BlueTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-tg-blue
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-299'
+
+  GreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-tg-green
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub '${EnvironmentName}-VPC'
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-299'
+
+  # Listener
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BlueTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ALBTestListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref GreenTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 8081
+      Protocol: HTTP
+
+  # CloudWatch Log Group
+  CloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${EnvironmentName}
+      RetentionInDays: 30
+
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${EnvironmentName}-cluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+
+  # ECS Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${EnvironmentName}-task1
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: !Sub ${EnvironmentName}-container
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/imagegallery-apprepo:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              HostPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: S3_BUCKET_NAME
+              Value:
+                Fn::ImportValue: !Sub '${EnvironmentName}-S3BucketName'
+          Secrets:
+            - Name: DB_USERNAME
+              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':username::']]
+            - Name: DB_PASSWORD
+              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':password::']]
+            - Name: DB_HOST
+              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':host::']]
+            - Name: DB_PORT
+              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':port::']]
+            - Name: DB_NAME
+              ValueFrom: !Join ['', [Fn::ImportValue: !Sub '${EnvironmentName}-SecretARN', ':dbname::']]
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn: ALBListener
+    Properties:
+      ServiceName: !Sub ${EnvironmentName}-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 2
+      LaunchType: FARGATE
+      DeploymentController:
+        Type: CODE_DEPLOY
+      LoadBalancers:
+        - TargetGroupArn: !Ref BlueTargetGroup
+          ContainerName: !Sub ${EnvironmentName}-container
+          ContainerPort: !Ref ContainerPort
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups: !Ref ECSSecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet1'
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet2'
+
+  # Auto Scaling
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 6
+      MinCapacity: 2
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref ECSCluster
+          - !GetAtt ECSService.Name
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+
+  Outputs:
+    LoadBalancerDNS:
+      Description: DNS of the load balancer
+      Value: !GetAtt ApplicationLoadBalancer.DNSName
+      Export:
+        Name: !Sub ${EnvironmentName}-LoadBalancerDNS
+
+    ECSClusterName:
+      Description: Name of the ECS cluster
+      Value: !Ref ECSCluster
+      Export:
+        Name: !Sub ${EnvironmentName}-ECSClusterName
+
+      ECSServiceName:
+        Description: Name of the ECS service
+        Value: !GetAtt ECSService.Name
+        Export:
+          Name: !Sub ${EnvironmentName}-ECSServiceName
+
