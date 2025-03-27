@@ -20,12 +20,6 @@ import javax.sql.DataSource;
 @Configuration
 public class S3Config {
 
-    @Value("${rds.endpoint}")
-    private String rdsEndpoint;
-
-    @Value("${rds.port:5432}")
-    private String rdsPort;
-
     private static final Region REGION = Region.US_WEST_1;
 
     @Bean
@@ -67,6 +61,8 @@ public class S3Config {
             String password = secretJson.get("password").asText();
             String dbname = secretJson.get("dbname").asText();
 
+            String rdsEndpoint = "dbaws-stack-postgresqldatabase-iuhq8njspktn.cfko0is804se.us-west-1.rds.amazonaws.com";
+            String rdsPort = "5432";
             String jdbcUrl = "jdbc:postgresql://" + rdsEndpoint + ":" + rdsPort + "/" + dbname;
 
             return DataSourceBuilder.create()
