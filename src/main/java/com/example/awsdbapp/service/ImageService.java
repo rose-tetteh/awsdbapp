@@ -34,14 +34,6 @@ public class ImageService {
 
     private final ImageRepository imageRepository;
 
-
-//    public ImageService(ImageRepository imageRepository) {
-//        this.s3Client = S3Config.s3Client();
-//        this.s3Presigner = S3Config.s3Presigner();
-//        this.imageRepository = imageRepository;
-//    }
-
-
     public List<ImageDto> listImages() {
         try {
             return imageRepository.findAll().stream()
