@@ -167,7 +167,7 @@
     </div>
 
     <!-- Image Grid -->
-    <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
         <!-- Images will be dynamically inserted here -->
     </div>
 
@@ -235,8 +235,8 @@
 <!-- Expanded Image Modal -->
 <div id="expanded-image-modal" class="fixed inset-0 z-50 hidden modal flex items-center justify-center">
     <div class="relative">
-        <img id="expanded-image" src="" alt="Expanded Image" class="max-w-[90vw] max-h-[90vh] object-contain">
-        <button id="close-expanded-modal" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+        <img id="expanded-image" src="" alt="Expanded Image" class="max-w-[120vw] max-h-[120vh] object-contain">
+        <button id="close-expanded-modal" class="absolute top-4 right-4 bg-red bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -411,7 +411,6 @@
                 body: formData
             });
 
-            awaits;
             uploadModal.classList.add('hidden');
             uploadForm.reset();
             fileNameDisplay.textContent = '';
