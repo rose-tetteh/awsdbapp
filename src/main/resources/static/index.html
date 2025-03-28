@@ -167,7 +167,7 @@
     </div>
 
     <!-- Image Grid -->
-    <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+    <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- Images will be dynamically inserted here -->
     </div>
 
@@ -235,8 +235,8 @@
 <!-- Expanded Image Modal -->
 <div id="expanded-image-modal" class="fixed inset-0 z-50 hidden modal flex items-center justify-center">
     <div class="relative">
-        <img id="expanded-image" src="" alt="Expanded Image" class="max-w-[120vw] max-h-[120vh] object-contain">
-        <button id="close-expanded-modal" class="absolute top-4 right-4 bg-red bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+        <img id="expanded-image" src="" alt="Expanded Image" class="max-w-[90vw] max-h-[90vh] object-contain">
+        <button id="close-expanded-modal" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -244,7 +244,7 @@
 
 <script>
     const API_BASE_URL = '/api/images';
-    const IMAGES_PER_PAGE = 3; // Set to 3 images per page as in Version 1
+    const IMAGES_PER_PAGE = 3;
     let images = [];
     let currentPage = 1;
     let imageToDelete = null;
@@ -282,6 +282,7 @@
             }
             const data = await response.json();
             images = Array.isArray(data) ? data : [];
+            console.log('Fetched images:', images); // Debug: Check for duplicates or unexpected length
             if (images.length === 0) {
                 imageGrid.innerHTML = `
                     <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center p-12">
@@ -344,7 +345,7 @@
         `).join('');
     }
 
-    // Render Pagination (from Version 1)
+    // Render Pagination
     function renderPagination() {
         const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
         if (totalPages <= 1) {
@@ -406,15 +407,18 @@
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
             submitButton.disabled = true;
 
-            await fetch(`${API_BASE_URL}/upload`, {
+            const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: 'POST',
                 body: formData
             });
+
+            if (!response.ok) throw new Error('Upload failed');
 
             uploadModal.classList.add('hidden');
             uploadForm.reset();
             fileNameDisplay.textContent = '';
             showNotification('Wallpaper uploaded successfully!', 'success');
+            await fetchImages(); // Refresh the gallery
         } catch (error) {
             console.error('Upload failed:', error);
             showNotification('Upload failed. Please try again.', 'error');
