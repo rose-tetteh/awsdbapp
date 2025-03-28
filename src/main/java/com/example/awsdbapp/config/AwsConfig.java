@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 import javax.sql.DataSource;
 
 @Configuration
-public class S3Config {
+public class AwsConfig {
 
     private static final Region REGION = Region.US_WEST_1;
 
@@ -71,12 +71,6 @@ public class S3Config {
                     .driverClassName("org.postgresql.Driver")
                     .build();
 
-//            return DataSourceBuilder.create()
-//                    .url("jdbc:postgresql://image-gallery-db.cd2426w0q9fa.eu-west-1.rds.amazonaws.com:5432/imagegallery")
-//                    .username("awsrdsdb")
-//                    .password("awsAPP,.12")
-//                    .driverClassName("org.postgresql.Driver")
-//                    .build();
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve database credentials from Secrets Manager", e);
         }

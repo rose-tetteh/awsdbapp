@@ -1,6 +1,6 @@
 package com.example.awsdbapp.service;
 
-import com.example.awsdbapp.config.S3Config;
+import com.example.awsdbapp.config.AwsConfig;
 import com.example.awsdbapp.model.ImageDto;
 import com.example.awsdbapp.model.ImageEntity;
 import com.example.awsdbapp.repository.ImageRepository;
@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ImageService {
-    private final S3Client s3Client = S3Config.s3Client();
-    private final S3Presigner s3Presigner = S3Config.s3Presigner();
+    private final S3Client s3Client = AwsConfig.s3Client();
+    private final S3Presigner s3Presigner = AwsConfig.s3Presigner();
     private final String bucketName = "imagegallery-buckett";
 
     private final ImageRepository imageRepository;
