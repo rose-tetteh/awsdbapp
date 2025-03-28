@@ -149,8 +149,8 @@
     <i class="fas fa-horse"></i>
 </div>
 
-<div class="container mx-auto px-4 py-6 max-w-6xl relative">
-    <header class="text-center mb-10">
+<div class="container mx-auto px-4 py-4 max-w-6xl relative">
+    <header class="text-center mb-6">
         <h1 class="text-4xl md:text-5xl font-bold mb-4 logo-text flex items-center justify-center">
             <i class="fas fa-photo-video mr-3"></i>Classy Animal WallPapers
         </h1>
@@ -172,7 +172,7 @@
     </div>
 
     <!-- Pagination -->
-    <div id="pagination" class="flex justify-center mt-12 space-x-2">
+    <div id="pagination" class="flex justify-center mt-6 space-x-2">
         <!-- Pagination buttons will be dynamically inserted here -->
     </div>
 </div>
@@ -356,7 +356,7 @@
             <button
                 onclick="changePage(${i + 1})"
                 class="pagination-btn px-4 py-2 rounded-md ${currentPage === i + 1
-                    ? 'bg-accent-color text-white'
+                    ? 'bg-accent-color text-white font-bold shadow-lg'
                     : 'bg-card-bg text-text-secondary'
                 }"
             >
